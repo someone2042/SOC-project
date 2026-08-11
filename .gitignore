@@ -71,3 +71,8 @@ soc_data.db
 
 # MacOS
 .DS_Store
+
+# Machine Learning Models and Artifacts
+*.bin
+*.joblib
+sba_microservice/models/

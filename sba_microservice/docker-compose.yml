@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  sba_microservice:
+    build: .
+    container_name: sba_microservice
+    restart: unless-stopped
+    environment:
+      # Inject these from your main .env or define them here
+      - OPENSEARCH_URL=${OPENSEARCH_URL:-https://localhost:9200}
+      - OPENSEARCH_USER=${OPENSEARCH_USER:-admin}
+      - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD:-admin}
+    volumes:
+      # Mount the models directory so that training on the host updates the container
+      - ./models:/app/models
+    networks:
+      - soc_network
+
+networks:
+  soc_network:
+    external: true
