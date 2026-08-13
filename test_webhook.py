@@ -10,74 +10,122 @@ mock_alert = {
         "type": "log"
     },
     "agent": {
-        "ip": "192.168.1.100",
-        "name": "window_server",
-        "id": "001"
+        "name": "ubuntuserver",
+        "id": "000"
     },
     "manager": {
         "name": "ubuntuserver"
     },
     "data": {
-        "win": {
-            "eventdata": {
-                "image": "C:\\\\Windows\\\\system32\\\\cleanmgr.exe",
-                "processGuid": "{e8e2694f-7464-6a74-6b01-000000001100}",
-                "processId": "456",
-                "utcTime": "2026-08-06 11:47:54.106",
-                "targetFilename": "C:\\\\Users\\\\ADMINI~1\\\\AppData\\\\Local\\\\Temp\\\\4F497CBF-6916-4EE5-B708-3858DC3128BE\\\\WimProvider.dll",
-                "ruleName": "DLL",
-                "creationUtcTime": "2026-08-06 11:47:54.106",
-                "user": "WIN-5RJ7UQ2G3GE\\\\Administrator"
+        "payload_printable": "...........j}.p:nq.....[.k_NkwQ...@.PgPh..>..*.,.+.0./.....$.#.(.'.\n...........=.<.5./.\n...W.........p3ar11fter.sbs..........\n.................\r.......................#...........",
+        "tx_id": "0",
+        "packet": "CAAn/yQGCAAnYL7hCABFAAAoACVAAIAGo9DAqAFkKFtsc8KrAbuOnHwgFLyi6FAQ+vDXQAAAAAAAAAAA",
+        "app_proto": "tls",
+        "packet_info": {
+            "linktype": "1"
+        },
+        "in_iface": "em1",
+        "src_ip": "192.168.1.100",
+        "src_port": "49835",
+        "event_type": "alert",
+        "alert": {
+            "severity": "1",
+            "signature_id": "2057665",
+            "rev": "2",
+            "metadata": {
+                "mitre_tactic_id": [
+                    "TA0011"
+                ],
+                "performance_impact": [
+                    "Low"
+                ],
+                "updated_at": [
+                    "2024_11_28"
+                ],
+                "confidence": [
+                    "High"
+                ],
+                "tls_state": [
+                    "TLSEncrypt"
+                ],
+                "created_at": [
+                    "2024_11_17"
+                ],
+                "mitre_technique_id": [
+                    "T1071"
+                ],
+                "mitre_technique_name": [
+                    "Application_Layer_Protocol"
+                ],
+                "mitre_tactic_name": [
+                    "Command_And_Control"
+                ],
+                "signature_severity": [
+                    "Critical"
+                ],
+                "deployment": [
+                    "Perimeter"
+                ],
+                "malware_family": [
+                    "Lumma_Stealer"
+                ]
             },
-            "system": {
-                "eventID": "11",
-                "keywords": "0x8000000000000000",
-                "providerGuid": "{5770385f-c22a-43e0-bf4c-06f5698ffbd9}",
-                "level": "4",
-                "channel": "Microsoft-Windows-Sysmon/Operational",
-                "opcode": "0",
-                "message": '"File created:\r\nRuleName: DLL\r\nUtcTime: 2026-08-06 11:47:54.106\r\nProcessGuid: {e8e2694f-7464-6a74-6b01-000000001100}\r\nProcessId: 456\r\nImage: C:\\Windows\\system32\\cleanmgr.exe\r\nTargetFilename: C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\4F497CBF-6916-4EE5-B708-3858DC3128BE\\WimProvider.dll\r\nCreationUtcTime: 2026-08-06 11:47:54.106\r\nUser: WIN-5RJ7UQ2G3GE\\Administrator"',
-                "version": "2",
-                "systemTime": "2026-08-06T11:47:54.109539900Z",
-                "eventRecordID": "5844",
-                "threadID": "3840",
-                "computer": "WIN-5RJ7UQ2G3GE",
-                "task": "11",
-                "processID": "2388",
-                "severityValue": "INFORMATION",
-                "providerName": "Microsoft-Windows-Sysmon"
+            "gid": "1",
+            "signature": "ET MALWARE Observed Win32/Lumma Stealer Related Domain (p3ar11fter .sbs in TLS SNI)",
+            "action": "allowed",
+            "source": {
+                "port": "443",
+                "ip": "40.91.108.115"
+            },
+            "category": "Domain Observed Used for C2 Detected",
+            "target": {
+                "port": "49835",
+                "ip": "192.168.1.100"
             }
-        }
+        },
+        "payload": "FgMDAK4BAACqAwNqfZBwOm5xltCTxB9bFmtfTmt3Uf4LHkAfUGdQaPu9PgAAKsAswCvAMMAvAJ8AnsAkwCPAKMAnwArACcAUwBMAnQCcAD0APAA1AC8ACgEAAFcAAAATABEAAA5wM2FyMTFmdGVyLnNicwAFAAUBAAAAAAAKAAgABgAdABcAGAALAAIBAAANABQAEgQBBQECAQQDBQMCAwICBgEGAwAjAAAAFwAA/wEAAQA=",
+        "stream": "1",
+        "flow_id": "563773627319190.000000",
+        "dest_ip": "40.91.108.115",
+        "proto": "TCP",
+        "tls": {
+            "session_resumed": "true",
+            "version": "TLS 1.2",
+            "sni": "p3ar11fter.sbs"
+        },
+        "dest_port": "443",
+        "pkt_src": "wire/pcap",
+        "flow": {
+            "src_ip": "192.168.1.100",
+            "src_port": "49835",
+            "pkts_toserver": "4",
+            "dest_ip": "40.91.108.115",
+            "start": "2026-08-13T09:37:54.590015+0000",
+            "bytes_toclient": "3010",
+            "bytes_toserver": "419",
+            "pkts_toclient": "4",
+            "dest_port": "443"
+        },
+        "timestamp": "2026-08-13T09:37:55.120764+0000",
+        "direction": "to_server"
     },
     "rule": {
-        "firedtimes": 28,
-        "mail": True,
-        "level": 15,
-        "description": "Executable file dropped in folder commonly used by malware",
+        "firedtimes": 13760,
+        "mail": False,
+        "level": 3,
+        "description": "Suricata: Alert - ET MALWARE Observed Win32/Lumma Stealer Related Domain (p3ar11fter .sbs in TLS SNI)",
         "groups": [
-            "sysmon",
-            "sysmon_eid11_detections",
-            "windows"
+            "ids",
+            "suricata"
         ],
-        "mitre": {
-            "technique": [
-                "Ingress Tool Transfer"
-            ],
-            "id": [
-                "T1105"
-            ],
-            "tactic": [
-                "Command and Control"
-            ]
-        },
-        "id": "92213"
+        "id": "86601"
     },
-    "location": "EventChannel",
+    "location": "192.168.1.1",
     "decoder": {
-        "name": "windows_eventchannel"
+        "name": "json"
     },
-    "id": "1786016877.147419314",
-    "timestamp": "2026-08-06T11:47:57.311+0000"
+    "id": "1786613876.118886776",
+    "timestamp": "2026-08-13T09:37:56.266+0000"
 }
 
 

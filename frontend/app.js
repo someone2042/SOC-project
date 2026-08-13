@@ -51,7 +51,12 @@ function renderAlerts(alerts) {
             <div class="flex items-center gap-4 text-xs text-slate-500">
                 <span class="flex items-center gap-1"><i class="fa-solid fa-server"></i> ${alert.agent_name}</span>
                 <span class="flex items-center gap-1"><i class="fa-solid fa-network-wired"></i> ${alert.agent_ip}</span>
-                <span class="flex items-center gap-1 ml-auto text-cyan-400 font-medium">View Reasoning <i class="fa-solid fa-arrow-right"></i></span>
+                <div class="flex items-center gap-3 ml-auto">
+                    <span class="px-2 py-1 rounded text-xs font-bold border ${alert.ml_sba_score !== null ? (alert.ml_sba_score > 75 ? 'bg-rose-900/30 text-rose-400 border-rose-500/50' : 'bg-emerald-900/30 text-emerald-400 border-emerald-500/50') : 'bg-slate-800/80 text-slate-500 border-slate-700/50'}" title="System Behavior Analytics ML Score">
+                        <i class="fa-solid fa-microchip mr-1"></i>SBA Score: ${alert.ml_sba_score !== null ? alert.ml_sba_score : 'N/A'}
+                    </span>
+                    <span class="text-cyan-400 font-medium hover:text-cyan-300 cursor-pointer">View Reasoning <i class="fa-solid fa-arrow-right"></i></span>
+                </div>
             </div>
         </div>
     `).join('');
@@ -185,5 +190,6 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
 
 // Poll every 5 seconds
 setInterval(fetchAlerts, 5000);
+
 // Initial fetch
 fetchAlerts();

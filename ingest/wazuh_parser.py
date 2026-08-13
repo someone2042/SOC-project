@@ -16,6 +16,7 @@ class ParsedAlert(BaseModel):
     agent_ip: str
     observables: List[Observable]
     raw_payload: Dict[str, Any]
+    sba_context: Dict[str, Any] = {}
 
 def extract_observables(payload: Dict[str, Any]) -> List[Observable]:
     """

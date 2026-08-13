@@ -6,7 +6,7 @@ import urllib3
 def job():
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Triggering SBA Inference Job...")
     try:
-        run_inference(index="wazuh-alerts-*") # Defaulting back to alerts for production
+        run_inference(index="wazuh-archives-*") # Changed to archives to include telemetry
     except Exception as e:
         print(f"Error during inference run: {e}")
 

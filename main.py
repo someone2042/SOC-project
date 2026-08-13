@@ -8,6 +8,13 @@ from ingest.wazuh_parser import parse_wazuh_alert, is_benign
 from agent.core_agent import SOCAgent
 import asyncio
 import database
+import sys
+from datetime import datetime
+
+# Add the microservice directory to the path so we can import the bridge
+sys.path.append(os.path.join(os.path.dirname(__file__), 'sba_microservice'))
+from soar_bridge_snippet import query_sba_score
+from inference import run_inference
 
 logging.basicConfig(
     level=logging.INFO, 
@@ -54,8 +61,22 @@ async def queue_worker():
                 })
             else:
                 logger.info(f"Triage Decision: [ESCALATE] Alert {parsed.rule_id} requires AI investigation.")
+                
+                # Fetch System Behavior Analytics (SBA) Context
+                alert_timestamp = parsed.raw_payload.get("timestamp") or parsed.raw_payload.get("all_fields", {}).get("timestamp") or datetime.now().isoformat()
+                try:
+                    logger.info(f"Fetching SBA Context for {parsed.agent_name} around {alert_timestamp}")
+                    sba_context = query_sba_score(parsed.agent_name, alert_timestamp)
+                    parsed.sba_context = sba_context
+                    logger.info(f"SBA Context Attached to Alert:\n{json.dumps(sba_context, indent=2)}")
+                except Exception as e:
+                    logger.error(f"Failed to fetch SBA Context: {e}")
+                
+                # Log the final prompt payload for visibility
+                logger.info(f"Escalating to AI Agent. Full Parsed Alert Payload:\n{parsed.model_dump_json(indent=2)}")
+                
                 decision = await soc_agent.investigate_alert(parsed)
-                database.update_alert_status(db_id, "COMPLETED", decision)
+                database.update_alert_status(db_id, "COMPLETED", decision, sba_score=sba_context.get("ml_sba_score") if 'sba_context' in locals() else None)
                 
             alert_queue.task_done()
         except Exception as e:
@@ -63,6 +84,24 @@ async def queue_worker():
             if 'db_id' in locals():
                 database.update_alert_status(db_id, "FAILED")
             await asyncio.sleep(5) # Prevent tight crash loop
+
+async def sba_inference_worker():
+    """Background worker that runs the SBA ML inference every 5 minutes (Dev Environment)."""
+    logger.info("SBA Inference background worker started. Running every 5 minutes.")
+    
+    # Run once at startup, then loop
+    while True:
+        try:
+            logger.info("Triggering scheduled SBA Inference Job...")
+            # Run inference synchronously in a thread pool to avoid blocking the async FastAPI loop
+            results = await asyncio.to_thread(run_inference, index="wazuh-archives-*")
+            if results:
+                database.insert_sba_history(results)
+                logger.info(f"Saved {len(results)} host scores to SQLite history.")
+        except Exception as e:
+            logger.error(f"Error during SBA inference run: {e}")
+        
+        await asyncio.sleep(300) # Sleep for 5 minutes (300 seconds)
 
 @app.on_event("startup")
 async def startup_event():
@@ -77,6 +116,9 @@ async def startup_event():
     
     # Start the background worker
     asyncio.create_task(queue_worker())
+    
+    # Start the dev-environment SBA inference scheduler
+    asyncio.create_task(sba_inference_worker())
 
 @app.post("/webhook/wazuh")
 async def wazuh_webhook(request: Request):
@@ -101,8 +143,18 @@ async def wazuh_webhook(request: Request):
 
 @app.get("/api/alerts")
 async def get_alerts():
-    # Only return completed alerts so the UI doesn't crash on missing 'decision'
-    return database.get_completed_alerts(limit=100)
+    """Returns the most recent completed alerts for the dashboard."""
+    return database.get_completed_alerts(limit=50)
+
+@app.get("/api/sba-history")
+async def get_sba_history(agent_name: str = None):
+    """Returns the background SBA ML score history for the dashboard chart."""
+    return database.get_sba_history(limit=50, agent_name=agent_name)
+
+@app.get("/api/agents")
+async def get_agents():
+    """Returns a list of unique agent names."""
+    return database.get_unique_agents()
 
 # Ensure frontend directory exists
 os.makedirs("frontend", exist_ok=True)

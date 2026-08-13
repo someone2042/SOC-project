@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity SOC - System Health</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-[#0f172a] text-slate-200 font-sans min-h-screen overflow-x-hidden selection:bg-cyan-500/30">
+    <div class="fixed inset-0 z-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxwYXRoIGQ9Ik0wIDBMMDQwIDBaIiBmaWxsPSJub25lIi8+CjxwYXRoIGQ9Ik0wIDBMMCA0ME00MCAwTDQwIDQwIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiIHN0cm9rZS13aWR0aD0iMSIvPgo8cGF0aCBkPSJNMCAwTDQwIDBNMCA0MEw0MCA0MCIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+')] opacity-50"></div>
+    <div class="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-600/20 blur-[120px] z-0 pointer-events-none"></div>
+    
+    <div class="relative z-10 flex min-h-screen max-w-7xl mx-auto p-4 sm:p-6 gap-6">
+        
+        <!-- Sidebar -->
+        <aside class="w-72 hidden md:flex flex-col gap-6 sticky top-6 self-start h-[calc(100vh-3rem)]">
+            <div class="glass-panel p-6 flex flex-col gap-2 rounded-2xl border border-slate-700/50 shadow-2xl">
+                <h1 class="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-400">
+                    <i class="fa-solid fa-shield-halved mr-2"></i>Antigravity SOC
+                </h1>
+                <p class="text-sm text-slate-400 font-light">Autonomous AI Triage</p>
+            </div>
+            
+            <div class="glass-panel p-6 flex-1 rounded-2xl border border-slate-700/50 shadow-2xl flex flex-col gap-6">
+                <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Navigation</h2>
+                <div class="flex flex-col gap-2">
+                    <a href="/" class="px-4 py-3 hover:bg-slate-800/50 border border-transparent rounded-xl text-slate-400 hover:text-slate-200 font-semibold flex items-center gap-3 transition-colors">
+                        <i class="fa-solid fa-bolt w-4"></i> Live Feed
+                    </a>
+                    <a href="/static/health.html" class="px-4 py-3 bg-cyan-900/30 border border-cyan-500/30 rounded-xl text-cyan-400 font-semibold flex items-center gap-3 transition-colors">
+                        <i class="fa-solid fa-heart-pulse w-4"></i> System Health
+                    </a>
+                </div>
+                
+                <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mt-4">Agent Selector</h2>
+                <div class="flex flex-col gap-2">
+                    <select id="agent-selector" class="w-full bg-slate-800 border border-slate-600 text-slate-200 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-2.5 outline-none transition-colors">
+                        <option value="">Loading agents...</option>
+                    </select>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Feed -->
+        <main class="flex-1 flex flex-col gap-6 pb-12">
+            <header class="glass-panel p-4 rounded-2xl border border-slate-700/50 flex justify-between items-center sticky top-6 z-20 bg-slate-900/80 backdrop-blur-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)] animate-pulse" id="status-indicator"></div>
+                    <h2 class="font-semibold text-slate-200">System Behavior Analytics</h2>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="current-score-badge" class="px-3 py-1 rounded text-sm font-bold bg-slate-800 border border-slate-700 text-slate-400">Score: --</span>
+                    <button id="refresh-btn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-sm font-medium transition-colors">
+                        <i class="fa-solid fa-rotate-right mr-2"></i>Refresh
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex flex-col gap-6">
+                
+                <!-- Huge Chart Area -->
+                <div class="glass-panel rounded-2xl border border-slate-700/50 p-6 shadow-2xl flex flex-col h-[350px]">
+                    <h3 class="text-lg font-semibold text-slate-200 mb-4">ML Health Trend (5-min intervals)</h3>
+                    <div class="flex-1 relative w-full h-full">
+                        <canvas id="largeSbaChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Telemetry Details Table -->
+                <div class="glass-panel rounded-2xl border border-slate-700/50 shadow-2xl flex flex-col overflow-hidden">
+                    <div class="p-6 border-b border-slate-700/50 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-slate-200">Recent Telemetry Drivers</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-400">
+                            <thead class="text-xs text-slate-500 uppercase bg-slate-800/40 border-b border-slate-700/50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Timestamp</th>
+                                    <th scope="col" class="px-6 py-3">Score</th>
+                                    <th scope="col" class="px-6 py-3">Nature</th>
+                                    <th scope="col" class="px-6 py-3">Contributing Factors (Top 3)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="factors-table-body">
+                                <tr class="border-b border-slate-700/30">
+                                    <td colspan="4" class="px-6 py-8 text-center italic">Waiting for data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/health.js?v=1"></script>
+</body>
+</html>

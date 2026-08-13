@@ -127,6 +127,7 @@ def run_inference(client=None, index="wazuh-archives-*"):
         score = scaled_scores[i]
         
         factors = []
+        negative_impact_idx = []
         if score > 75:  # Lowered slightly so lab tests with moderate spikes trigger SHAP
             print(f"Host '{host}' flagged anomalous with score {score:.2f}. Extracting factors...", flush=True)
             shap_values = explainer.shap_values(X_pred[i:i+1])
@@ -168,8 +169,11 @@ def run_inference(client=None, index="wazuh-archives-*"):
         
     # 7. Push to OpenSearch
     print(f"Pushing {len(results)} inference results to OpenSearch...", flush=True)
-    push_sba_scores(client, results)
+    if results:
+        push_sba_scores(client, results)
+        
     print("Inference pipeline finished successfully.", flush=True)
+    return results
 
 if __name__ == "__main__":
     run_inference(index="wazuh-archives-*")
