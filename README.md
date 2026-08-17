@@ -36,7 +36,7 @@ To run this platform, you must have access to:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/lucid-soc.git
+   git clone https://github.com/someone2042/SOC-project
    cd lucid-soc
    ```
 
