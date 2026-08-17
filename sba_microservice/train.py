@@ -119,6 +119,49 @@ def train_baseline():
     synthetic_df = pd.DataFrame([synthetic_row], index=pd.MultiIndex.from_tuples([('synthetic_host', pd.Timestamp.now(tz=timezone.utc))]))
     freq_df = pd.concat([freq_df, synthetic_df])
         
+    # 3.5 Apply User Feedback (Marked as Normal)
+    print("Fetching user feedback from SQLite database...", flush=True)
+    feedback_entries = []
+    try:
+        import sqlite3
+        db_path = os.path.join(os.path.dirname(__file__), '..', 'soc_data.db')
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT agent_name, timestamp FROM sba_feedback")
+            feedback_entries = [dict(row) for row in cursor.fetchall()]
+    except Exception as e:
+        print(f"Error reading feedback from database: {e}", flush=True)
+
+    if feedback_entries:
+        print(f"Applying {len(feedback_entries)} feedback entries to normalize specific behaviors...", flush=True)
+        feedback_rows = []
+        for f in feedback_entries:
+            f_host = f.get('agent_name')
+            if not f_host or not f.get('timestamp'):
+                continue
+            
+            try:
+                # Convert the ISO string from the frontend to a pandas UTC timestamp
+                f_time = pd.to_datetime(f['timestamp'], utc=True)
+                # Find the 5-min floor to match our GroupBy index
+                f_time_floor = f_time.floor('5min')
+                
+                if (f_host, f_time_floor) in freq_df.index:
+                    # Extract the exact feature vector that caused the alert
+                    row = freq_df.loc[[(f_host, f_time_floor)]].copy()
+                    
+                    # Duplicate it 50 times to force IForest to learn it as "normal" due to high density
+                    for _ in range(50):
+                        feedback_rows.append(row)
+            except Exception as e:
+                print(f"Failed to process feedback entry {f}: {e}", flush=True)
+        
+        if feedback_rows:
+            feedback_df = pd.concat(feedback_rows)
+            freq_df = pd.concat([freq_df, feedback_df])
+            print(f"Injected {len(feedback_rows)} replicated vectors based on user feedback.", flush=True)
+
     print(f"[TRAIN DEBUG] Vectorized DataFrame shape: {freq_df.shape}", flush=True)
     print(f"[TRAIN DEBUG] Vectorized Data Head:\n{freq_df.head(3)}", flush=True)
     

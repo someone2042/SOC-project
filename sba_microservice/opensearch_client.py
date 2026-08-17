@@ -140,7 +140,6 @@ def push_sba_scores(client: OpenSearch, scores: list, index: str = "sba-host-sco
     # Since it's per host per 5 mins, the list is small (number of hosts).
     for score_doc in scores:
         client.index(index=index, body=score_doc, refresh=True)
-    
     print(f"Successfully pushed {len(scores)} SBA score documents to {index}")
 
 if __name__ == "__main__":

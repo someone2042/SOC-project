@@ -142,7 +142,7 @@ function renderTable(historyData) {
     const tbody = document.getElementById('factors-table-body');
     
     if (historyData.length === 0) {
-        tbody.innerHTML = '<tr class="border-b border-slate-700/30"><td colspan="4" class="px-6 py-8 text-center italic">No telemetry recorded yet.</td></tr>';
+        tbody.innerHTML = '<tr class="border-b border-slate-700/30"><td colspan="5" class="px-6 py-8 text-center italic">No telemetry recorded yet.</td></tr>';
         return;
     }
     
@@ -169,6 +169,9 @@ function renderTable(historyData) {
                 <td class="px-6 py-4 whitespace-nowrap">${scoreBadge}</td>
                 <td class="px-6 py-4 whitespace-nowrap font-medium ${natureColor}">${h.nature || '-'}</td>
                 <td class="px-6 py-4 text-xs">${factorsList}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    ${h.marked_normal ? `<button disabled class="px-2 py-1 bg-emerald-900/30 text-emerald-400 rounded text-xs font-bold border border-emerald-500/50 shadow-sm cursor-default" title="Already marked as normal"><i class="fa-solid fa-check mr-1"></i>Marked as Normal</button>` : `<button onclick="markNormal('${currentAgent}', '${h.timestamp}', this)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold border border-slate-600 transition-colors shadow-sm" title="Mark this host's behavior as normal for future training"><i class="fa-solid fa-check-double mr-1"></i>Mark Normal</button>`}
+                </td>
             </tr>
         `;
     }).join('');
@@ -181,3 +184,32 @@ setInterval(() => {
 
 // Init
 fetchAgents();
+
+async function markNormal(agentName, timestamp, btn) {
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Marking...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch('/api/sba-feedback', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({agent_name: agentName, timestamp: timestamp})
+        });
+        if (response.ok) {
+            btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400 mr-1"></i>Marked as Normal';
+            btn.className = "px-2 py-1 bg-emerald-900/30 text-emerald-400 rounded text-xs font-bold border border-emerald-500/50 shadow-sm cursor-default";
+        } else {
+            throw new Error('Server error');
+        }
+    } catch (e) {
+        console.error(e);
+        btn.innerHTML = '<i class="fa-solid fa-xmark text-rose-400 mr-1"></i>Failed';
+        btn.className = "px-2 py-1 bg-rose-900/30 text-rose-400 rounded text-xs font-bold border border-rose-500/50 shadow-sm cursor-default";
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+            btn.className = "px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold border border-slate-600 transition-colors shadow-sm";
+        }, 3000);
+    }
+}

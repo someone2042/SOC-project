@@ -1,7 +1,7 @@
 import sqlite3
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,14 @@ def init_db():
                 severity TEXT,
                 nature TEXT,
                 factors TEXT
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS sba_feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                agent_name TEXT,
+                timestamp TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
         
@@ -94,8 +102,10 @@ def get_completed_alerts(limit=100):
             LIMIT ?
         """, (limit,))
         
+        feedback_set = _get_feedback_set()
         results = []
         for row in cursor.fetchall():
+            is_marked = (row["agent_name"], _floor_5min(row["timestamp"])) in feedback_set
             results.append({
                 "id": row["wazuh_alert_id"],
                 "timestamp": row["timestamp"],
@@ -103,7 +113,8 @@ def get_completed_alerts(limit=100):
                 "agent_name": row["agent_name"],
                 "agent_ip": row["agent_ip"],
                 "ml_sba_score": row["ml_sba_score"],
-                "decision": json.loads(row["decision"]) if row["decision"] else None
+                "decision": json.loads(row["decision"]) if row["decision"] else None,
+                "marked_normal": is_marked
             })
         return results
 
@@ -170,8 +181,10 @@ def get_sba_history(limit=50, agent_name=None):
                 LIMIT ?
             """, (limit,))
         
+        feedback_set = _get_feedback_set()
         results = []
         for row in cursor.fetchall():
+            is_marked = (row["agent_name"], _floor_5min(row["timestamp"])) in feedback_set
             results.append({
                 "id": row["id"],
                 "timestamp": row["timestamp"],
@@ -179,7 +192,43 @@ def get_sba_history(limit=50, agent_name=None):
                 "score": row["score"],
                 "severity": row["severity"],
                 "nature": row["nature"],
-                "factors": json.loads(row["factors"]) if row["factors"] else []
+                "factors": json.loads(row["factors"]) if row["factors"] else [],
+                "marked_normal": is_marked
             })
         # Reverse to get chronological order for charting
         return results[::-1]
+
+def insert_sba_feedback(agent_name: str, timestamp: str):
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO sba_feedback (agent_name, timestamp)
+            VALUES (?, ?)
+        """, (agent_name, timestamp))
+        conn.commit()
+
+def get_sba_feedback():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT agent_name, timestamp FROM sba_feedback")
+        return [{"agent_name": row["agent_name"], "timestamp": row["timestamp"]} for row in cursor.fetchall()]
+
+def _floor_5min(ts_str: str) -> str:
+    try:
+        dt = datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        minute = (dt.minute // 5) * 5
+        return dt.replace(minute=minute, second=0, microsecond=0).isoformat()
+    except Exception:
+        return None
+
+def _get_feedback_set():
+    feedbacks = get_sba_feedback()
+    feedback_set = set()
+    for f in feedbacks:
+        floored = _floor_5min(f["timestamp"])
+        if floored:
+            feedback_set.add((f["agent_name"], floored))
+    return feedback_set

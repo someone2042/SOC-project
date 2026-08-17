@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from ingest.wazuh_parser import parse_wazuh_alert, is_benign
 from agent.core_agent import SOCAgent
 import asyncio
@@ -155,6 +156,20 @@ async def get_sba_history(agent_name: str = None):
 async def get_agents():
     """Returns a list of unique agent names."""
     return database.get_unique_agents()
+
+class SBAFeedback(BaseModel):
+    agent_name: str
+    timestamp: str
+
+@app.post("/api/sba-feedback")
+async def mark_sba_normal(feedback: SBAFeedback):
+    """Saves user feedback to the SQLite database to mark a specific host's behavior as normal."""
+    try:
+        database.insert_sba_feedback(feedback.agent_name, feedback.timestamp)
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Error saving SBA feedback: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save feedback")
 
 # Ensure frontend directory exists
 os.makedirs("frontend", exist_ok=True)

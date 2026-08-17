@@ -74,7 +74,10 @@ function openModal(index) {
         <div class="p-4 bg-slate-900/50 rounded-lg border border-slate-700/50 mb-4">
             <div class="flex justify-between items-center mb-2">
                 <div class="font-semibold text-slate-300">AI Executive Summary</div>
-                ${getVerdictBadge(alert.decision.verdict)}
+                <div class="flex gap-2">
+                    ${alert.ml_sba_score !== null ? (alert.marked_normal ? `<button disabled class="px-2 py-1 bg-emerald-900/30 text-emerald-400 rounded text-xs font-bold border border-emerald-500/50 shadow-sm cursor-default" title="Already marked as normal"><i class="fa-solid fa-check mr-1"></i>Marked as Normal</button>` : `<button id="mark-normal-btn" onclick="markNormal('${alert.agent_name}', '${alert.timestamp}', this)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold border border-slate-600 transition-colors shadow-sm" title="Mark this host's behavior as normal for future training"><i class="fa-solid fa-check-double mr-1"></i>Mark Normal</button>`) : ''}
+                    ${getVerdictBadge(alert.decision.verdict)}
+                </div>
             </div>
             <p class="text-slate-300 text-sm leading-relaxed">${alert.decision.summary}</p>
             <div class="mt-4 flex gap-4 text-sm">
@@ -166,6 +169,35 @@ function openModal(index) {
     void modal.offsetWidth;
     modal.classList.remove('opacity-0');
     content.classList.remove('scale-95');
+}
+
+async function markNormal(agentName, timestamp, btn) {
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Marking...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch('/api/sba-feedback', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({agent_name: agentName, timestamp: timestamp})
+        });
+        if (response.ok) {
+            btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400 mr-1"></i>Marked as Normal';
+            btn.className = "px-2 py-1 bg-emerald-900/30 text-emerald-400 rounded text-xs font-bold border border-emerald-500/50 shadow-sm cursor-default";
+        } else {
+            throw new Error('Server error');
+        }
+    } catch (e) {
+        console.error(e);
+        btn.innerHTML = '<i class="fa-solid fa-xmark text-rose-400 mr-1"></i>Failed';
+        btn.className = "px-2 py-1 bg-rose-900/30 text-rose-400 rounded text-xs font-bold border border-rose-500/50 shadow-sm cursor-default";
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+            btn.className = "px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-bold border border-slate-600 transition-colors shadow-sm";
+        }, 3000);
+    }
 }
 
 document.getElementById('close-modal-btn').addEventListener('click', () => {
